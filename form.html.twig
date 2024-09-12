@@ -1,0 +1,758 @@
+{# @var workflow \Pimcore\Model\DataObject\workflow #}
+
+{# % extends 'crud/layout.html.twig' % #}
+
+{% extends "@PimcorePortalEngine/layout/default.html.twig" %}
+
+{% block content %}
+{% set foo = app.request.pathInfo|split('/') %}
+{% set currentObj = pimcore_object(data.general.o_id) %}
+   <script src="{{ asset('/bundles/pimcoreadmin/js/lib/ckeditor/ckeditor.js')}}"></script>
+    <script type="text/javascript" src="{{ asset('bundles/pimcoreadmin/js/lib/ckeditor/config.js') }}"></script>
+  <link rel="stylesheet" type="text/css" href="{{ asset('bundles/pimcoreadmin/js/lib/ckeditor/skins/flat/editor.css') }}">
+<script type="text/javascript" src="{{ asset('bundles/pimcoreadmin/js/lib/ckeditor/lang/en.js') }}"></script>
+<script type="text/javascript" src="{{ asset('bundles/pimcoreadmin/js/lib/ckeditor/styles.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{ asset('bundles/pimcoreadmin/js/lib/ckeditor/plugins/dialog/styles/dialog.css') }}">
+
+<style>
+.form-group label.error {
+    color: red;
+}
+.nav>li>a {
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+}
+.nav-tabs>li>a {
+    margin-right: 2px;
+    line-height: 1.42857143;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+}
+    .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    color: #555;
+    cursor: default;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-bottom-color: transparent;
+}
+.nav-tabs>li {
+    float: left;
+    margin-bottom: -1px;
+}
+.nav>li {
+    position: relative;
+    display: block;
+}
+.nav-tabs:not(.nav-level--1)+.tab-content>.tab-pane {
+    border: 0.0625rem solid #e7e5ec;
+    padding: 0.75rem;
+}
+.tab-content>.tab-pane {
+    display: none;
+}
+.tab-content>.active {
+    display: block;
+}
+.cke_editable{
+    cursor: text;
+    position: relative;
+    padding: 10px;
+    min-height: 80px;
+    font: normal 12px tahoma, arial, helvetica, sans-serif;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.fade.in {
+    opacity: 1;
+}
+.pimcore_droptarget_input, .input_drop_target, .input_drop_target input  {
+    background: url(/bundles/pimcoreadmin/img/flat-color-icons/target.svg) right 5px center/20px no-repeat transparent !important;
+    cursor: default;
+}
+
+.pimcore_droptarget_display_edit {
+    opacity: 1 !important;
+}
+
+.pimcore_droptarget_display div {
+    width: 100%;
+    min-height: 30px;
+    padding: 5px 10px 4px;
+    margin-top: 0;
+    white-space: nowrap;
+    font: 300 13px/21px 'Open Sans', 'Helvetica Neue', helvetica, arial, verdana, sans-serif;
+    background: url(/bundles/pimcoreadmin/img/flat-color-icons/target.svg) right 5px center/20px no-repeat #fff !important;
+}
+.imagediv{
+    width:150px;
+    height:100px;
+}
+
+    /*Toolbar*/
+    .cke_inner{
+        width: 60%;
+    }
+    span.required {
+    color: #dc3545 !important;
+}
+.pimcore_object_label_icon {
+    margin: 0 1px -2px 0;
+    display: inline-block;
+    width: 14px;
+    height: 13px;
+}
+.pimcore_icon_gray_info {
+    background: url(/bundles/pimcoreadmin/img/flat-color-icons/info-gray.svg) center center no-repeat !important;
+}
+/* Tooltip container */
+.tooltipshow {
+  /* position: relative; */
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltipshow .tooltiptext {
+  visibility: hidden;
+  width: auto;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 5px;
+  border-radius: 6px;
+ 
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltipshow:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.1/jquery.validate.min.js"></script>
+ <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.1/additional-methods.js" ></script>
+<script  type="text/javascript" defer>
+
+// Select the contents of a text field
+function selectedBricks(obj) {
+  // alert(obj.value)
+  var objectData= {{data.data|json_encode()|raw}};
+  var objectBricks = {{data.ObjectBricks.layoutDefinitions|json_encode()|raw}};
+  
+  var objValue = obj.value;
+  var objName = obj.name.replace('[type]','');
+  var selectedItem = objectBricks[objValue].children[0].children;
+  var selectedData = objectData[objName].filter(function(e){return e});
+  // console.log('selectedData', selectedData[0].data['Color']);
+ 
+  var inputs ='';
+  for(var i=0; i< selectedItem.length;i++){
+       
+      // alert(selectedItem[i].fieldtype);
+      if(selectedItem[i].fieldtype == 'input'){
+          inputs = inputs + '<div class="col-6"><div class="form-group"> <lable for="'+selectedItem[i].name+'">'+selectedItem[i].title+'</lable> <input type="text" name="'+objName+'[data]['+selectedItem[i].name+']" id="'+selectedItem[i].name+'" placeholder="'+selectedItem[i].name+'" class="form-control"  value="'+ (selectedData[0]?.data[selectedItem[i].name] ? selectedData[0].data[selectedItem[i].name]:"") +'"  /></div></div>';
+      }else if(selectedItem[i].fieldtype =='numeric'){  
+          
+          inputs = inputs + '<div class="col-6"><div class="form-group"><lable for="'+selectedItem[i].name+'">'+selectedItem[i].title+'</lable><input type="number" name="'+objName+'[data]['+selectedItem[i].name+']" step="any"  onwheel="return false;"  id="'+selectedItem[i].name+'"  placeholder="'+selectedItem[i].title+'" class="form-control" value="'+selectedData[0]?.data[selectedItem[i].name]+'"   /></div></div>';
+        }else if(selectedItem[i].fieldtype =='select'){
+              inputs = inputs + '<div class="col-6"><div class="form-group"><lable for="'+selectedItem[i].name+'">'+selectedItem[i].title+'</lable><select name="'+objName+'[data]['+selectedItem[i].name+']" id="'+selectedItem[i].name+'" class="form-control" ><option value="">Select</option>';
+                    
+                    for(var j=0; j< selectedItem[i].options.length;j++){
+                        var options = selectedItem[i].options[j];
+                        if(options.value!=""){
+                           inputs = inputs + '<option value="'+options.key+'" '+(selectedData[0].data[selectedItem[i].name] == options.value?"selected":"")+'  >'+options.value+'</option>';
+                        }
+                    }
+                   
+                             inputs = inputs +'</select></div></div>';
+      
+  }
+  // alert(inputs);
+  document.getElementById('custombrick').innerHTML = inputs;
+  // .insertAdjacentHTML("<b>test</b>");
+  // alert(document.getElementById('customBrick').innerHtml);
+}
+
+}
+		
+</script>
+<form action="{{ path('create_product') }}" method="POST"  enctype="multipart/form-data" id="ProductForm" name="ProductForm">
+    
+    <input type="hidden" name="id" id="id" value="{{data.general.o_id}}" >
+    <input type="hidden" name="isAdd" id="isAdd" value="{{isAdd}}" >
+    <div class="container">
+        <div class="row">
+            <div class="col-10 m-auto p-sm-3">
+                {#{dump(data.layout.children[0].children[4].children[4])} #}
+                <div class="x-panel objectlayout_element_Layout objectlayout_element_tabpanel x-fit-item x-panel-default" id="tabpanel-{{data.general.o_id}}">
+                     <ul class="nav nav-tabs">
+                        {% for tabs in data.layout.children[0].children|slice(0, - 3) %}
+                        <li {% if tabs.name == "General Details" %} class="active"{% endif %}><a data-toggle="tab" href="#{{tabs.name|replace({' ': ''})}}">{{tabs.title}}</a></li>
+                        {% endfor %}
+                      
+                    </ul>
+                
+                    <div class="tab-content">
+                      {% for tabs in data.layout.children[0].children|slice(0, - 3) %}
+                      
+                      <div id="{{tabs.name|replace({' ': ''})}}" class="tab-pane fade {% if tabs.name == "General Details" %}  in active {% endif %}">
+                          <div class="row">
+                              {% for fields in tabs.children %}
+                               {# {dump(fields)} #}
+                                {% if fields.fieldtype =='input' %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                 <lable for="{{fields.name}}"  class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                    {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                 
+                                 </lable>
+                                    <input {% if fields.invisible != "true" %}  type="text" {% else %} type="hidden" {% endif %} maxlength="{{fields.columnLength}}" name="{{fields.name}}" id="{{fields.name}}" placeholder="{{fields.title}}" {% if fields.unique == true %} data-rule-remote="{{ path('unique_filed_check') }}?id={{data.general.o_id}}" {%endif%}{% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control" value="{% if data.data[fields.name]%}{{data.data[fields.name]}}{% endif %}" {% if fields.noteditable == true %} readonly="true" {% endif %} {% if fields.name|lower =='upc'%} data-rule-remote="{{ path('unique_upc_check') }}?id={{data.general.o_id}}" {% endif %} {% if fields.regex !="" %} pattern="{{fields.regex}}" {% endif %} />
+                                   
+                                     </div>
+                                </div>
+                                {% elseif fields.fieldtype =='numeric' %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                 <lable for="{{fields.name}}"  class="{% if fields.tooltip !="" %}tooltipshow{% endif %}" >{{fields.title}}
+                                 {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                    </lable>
+                                    <input {% if fields.invisible != "true" %}  type="number" {% else %} type="hidden" {% endif %} name="{{fields.name}}" id="{{fields.name}}" data-rule-number="true" placeholder="{{fields.title}}" step="any"  onwheel="return false;"  {% if fields.mandatory == true %} data-rule-required="true" {% endif %} min="0" class="form-control" value="{% if data.data[fields.name]%}{{data.data[fields.name]}}{% endif %}"  {% if fields.noteditable == true %} readonly="true" {% endif %}  />
+                                     </div>
+                                </div>
+                                {% elseif fields.fieldtype =='select' or fields.fieldtype =='booleanSelect' %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}" >{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                     {#{dump(fields.options)}#}
+                                    <select name="{{fields.name}}" {% if fields.mandatory == true %} data-rule-required="true" {% endif %} id="{{fields.name}}" class="form-control"  {% if fields.noteditable == true %} readonly="true" disabled="true" {% endif %}  >
+                                        <option value="">Select</option>
+                                        {% for options in fields.options %}
+                                            {% if options.key!="" %}
+                                            <option value="{{options.value}}" {% if options.value == data.data[fields.name]%} selected {% endif %} >{{options.key}}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                     </div>
+                                </div>
+                                {#  {% elseif fields.fieldtype=="externalImage" %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <input type="url"  name="{{fields.name}}" id="{{fields.name}}" placeholder="{{fields.title}}"  {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control pimcore_droptarget_input" />
+                                     </div>
+                                </div>
+                                #}
+                                {% elseif fields.fieldtype =="hotspotimage" %}
+                                {# {dump(fields)} #}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                        {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <input type="file" name="{{fields.name}}" id="{{fields.name}}" onchange="loadFile(event)"  placeholder="{{fields.title}}" {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control" data-rule-accept="image/*" />
+                                        {% if data.data[fields.name] %}
+                                            {% set image = pimcore_asset(data.data[fields.name].id) %}
+                                            <img id="imagediv" class="imagediv" src="{{ image.getThumbnail({ width:150,format: 'png',aspectratio: true,interlace: true, quality: 95,}) }}" />
+                                        {% else %}
+                                            <img id="imagediv"  class="imagediv" style="display:none" >
+                                        {% endif %}
+                                     </div>
+                                </div>
+                                {# {% elseif fields.fieldtype =='video' %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <input type="file" name="{{fields.name}}" id="{{fields.name}}" placeholder="{{fields.title}}"  {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control pimcore_droptarget_input" />
+                                     </div>
+                                </div>
+                                    #}
+                                {% elseif fields.fieldtype =='imageGallery' %}
+                                 <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                        {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <input type="file" name="{{fields.name}}[]" id="{{fields.name}}" placeholder="{{fields.title}}"  multiple="multiple"  {% if fields.mandatory == true %} data-rule-required="true" {% endif %} data-rule-accept="image/*" class="form-control" onchange="imageGalleryPick(event)" />
+                                     </div>
+                                     {% if data.data[fields.name] %}
+                                        <div id="imagegallerydiv">
+                                            {% for imageGallery in data.data[fields.name] %}
+                                                 {% set image = pimcore_asset(imageGallery.id) %}
+                                                <img class="imagediv" src="{{ image.getThumbnail({ width:150,format: 'png',aspectratio: true,interlace: true, quality: 95,}) }}" />
+                                            {% endfor %}
+                                        </div>
+                                     {% else %}
+                                        <div id="imagegallerydiv" style="display:none"></div>
+                                     {% endif %}
+                                     
+                                     
+                                </div>
+                                 {% elseif fields.fieldtype=='textarea' %}
+                                  <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}" >{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <textarea name="{{fields.name}}" id="{{fields.name}}"  {% if fields.noteditable == true %} readonly="true" {% endif %}   {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control" />{{data.data[fields.name]}}</textarea>
+                                     </div>
+                                </div>
+                                 {% elseif fields.fieldtype =='wysiwyg' %}
+                                  <div class="col-6">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                     
+                                      {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <textarea name="{{fields.name}}" id="{{fields.name}}"   {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control {{fields.fieldtype }}" {% if fields.noteditable == true %} readonly="true" {% endif %}   />{{data.data[fields.name]}}</textarea>
+                                     </div>
+                                </div>
+                                 {% elseif fields.fieldtype =='quantityValue' %}
+                                  <div class="col-6">
+                                    <div class="form-group">
+                                  <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}} {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                      {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                    </lable>
+                                 <div class="row">
+                                     <div class="col-8">
+                                     <input {% if fields.invisible != "true" %}  type="number" {% else %} type="hidden" {% endif %}  name="{{fields.name}}" data-rule-quantityValue="true" id="{{fields.name}}" placeholder="{{fields.title}}" step="any"  onwheel="return false;"  {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="form-control" min="0" value="{% if data.data[fields.name]%}{{data.data[fields.name].value}}{% endif %}"  /> 
+                                     </div>
+                                     <div class="col-4">
+                                     {% if fields.validUnits|length > 0 %} 
+                                     <span>
+                                         
+                                            <select name="{{fields.name}}__value" id="{{fields.name}}__value" onchange="validateQuantity(this)"  class="form-control">
+                                                <option value=""> - </option>
+                                                {% for validUnits in fields.validUnits %}
+                                                  
+                                                     {% for units in data.UnitLst.data %} 
+                                                        {% if units.id == validUnits %}
+                                                           <option value={{validUnits}} {% if validUnits == fields.defaultUnit %} selected="selected" {% endif %} {% if data.data[fields.name] and validUnits == data.data[fields.name].unit%} selected {% endif %}>{{units.abbreviation}}</option>
+                                                         {% endif %}
+                                                    {% endfor %} 
+                                                   
+                                                {% endfor %}
+                                            </select>
+                                     </span> 
+                                     {% endif %}
+                                     </div>
+                                     </div>
+                                      </div>
+                                </div>
+                                {% elseif fields.fieldtype=='date' %}
+                                 <div class="col-3">
+                                    <div class="form-group">
+                                     <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}}
+                                     {% if fields.mandatory == true %}
+                                        <span class="required">*</span>
+                                    {% endif %}
+                                      {% if fields.tooltip !="" %}
+                                     <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+  <span class="tooltiptext">{{fields.tooltip}}</span>
+</span>
+                                    {% endif %}
+                                     </lable>
+                                    <input type="date" name="{{fields.name}}" id="{{fields.name}}" placeholder="dd/mm/YYYY" data-rule-date=”true”   {% if fields.mandatory == true %} data-rule-required="true" {% endif %} class="datepicker form-control" value="{% if data.data[fields.name]%}{{data.data[fields.name]|date('Y-m-d') }}{% endif %}" {% if fields.noteditable == true %} readonly="true" {% endif %}  >
+                                     </div>
+                                </div>
+                                {% elseif fields.fieldtype == 'objectbricks' %}
+                                {# {dump(fields.allowedTypes[data.data['Brand']|upper])} #}
+                                    {% if fields.name !="VariantAttributes" %}
+                                        <div class="col-6">
+                                        <div class="form-group">
+                                         <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}} 
+                                         {% if fields.mandatory == true %}
+                                            <span class="required">*</span>
+                                        {% endif %}
+                                          {% if fields.tooltip !="" %}
+                                         <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+      <span class="tooltiptext">{{fields.tooltip}}</span>
+    </span>
+                                        {% endif %}
+                                         </lable>
+                                        <select name="{{fields.name}}[type]" id="{{fields.name}}" class="form-control" onchange="selectedBricks(this)";>
+                                            <option value=""> - </option>
+                                            {% for allowedTypes in fields.allowedTypes|sort %}
+                                                <option value="{{allowedTypes}}"
+                                                {% for bricks in data.data[fields.name] %}
+                                                {% if bricks|length > 0 and bricks.type == allowedTypes  %}
+                                                   selected='selected'
+                                                {% endif %}
+                                            {% endfor %}
+                                                >{{allowedTypes}}</option>
+                                            {% endfor %}
+                                        </select>
+                                         </div>
+                                    </div>
+                                        <div class="container" >
+                                        <div class="row" id="custombrick">
+                                             {% for bricks in data.data[fields.name] %}
+                                                {% if bricks|length >0  %}
+                                                   {% for brick in  data.ObjectBricks.layoutDefinitions[bricks.type].children[0].children %}
+                                                        {% if brick.fieldtype =='input' %}
+                                                            <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable> <input type="text" name="{{ fields.name~'[data]['~brick.name~']' }}" id="{{brick.name}}" placeholder="{{brick.name}}" class="form-control"  value="{{bricks.data[brick.name]}}"  /></div></div>
+                                                        {% elseif brick.fieldtype =='numeric'%}
+                                                              <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable> <input type="number" step="any"  onwheel="return false;"   name="{{ fields.name~'[data]['~brick.name~']' }}" id="{{brick.name}}" placeholder="{{brick.name}}" class="form-control"  value="{{bricks.data[brick.name]}}"  /></div></div>
+                                                        {% elseif brick.fieldtype =='select'%}
+                                                              <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable>
+                                                                <select name="{{ fields.name~'[data]['~brick.name~']' }}" id="id="{{brick.name}}"" class="form-control" ><option value="">Select</option>';
+                        
+                                    
+                                                                        {% for optionsbrick in brick.options %}
+                                                                            {% if optionsbrick.value!="" %}
+                                                                                <option value="{{optionsbrick.key}}" {% if optionsbrick.key == bricks.data[brick.name] %} selected ="selected"{% endif %} >{{optionsbrick.value}}</option>
+                                                                            {% endif %}
+                                                                    {% endfor %}
+                                                                   
+                                                                   
+                                                                </select>
+                                                              </div></div>
+                                                        {% endif %}
+                                                   {% endfor %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% elseif fields.name =="VariantAttributes" and currentObj.getParent().getType() =='object' %}
+                                        {% set currentBrand = data.data['Brand']|replace({' ': ''}) %}
+                                        {% if data.data[fields.name] is not null %}
+                                        {% set filterArray = data.data[fields.name]|filter(item=> item is not null) %}
+                                        {% else %}
+                                        {% set filterArray = []%}
+                                        {% endif %}
+                                        {# {dump(filterArray)} #}
+                                     
+                                            <div class="col-12">
+                                        <div class="form-group">
+                                         <lable for="{{fields.name}}" class="{% if fields.tooltip !="" %}tooltipshow{% endif %}">{{fields.title}} 
+                                         {% if fields.mandatory == true %}
+                                            <span class="required">*</span>
+                                        {% endif %}
+                                          {% if fields.tooltip !="" %}
+                                         <span class="pimcore_object_label_icon pimcore_icon_gray_info">
+      <span class="tooltiptext">{{fields.tooltip}}</span>
+    </span>
+                                        {% endif %}
+                                         </lable>
+                                         <input type="hidden" name="{{fields.name}}[type]" value="{{currentBrand}}"  />
+                                         </div>
+                                         </div>
+                                         <div class="container" >
+                                            
+                                        <div class="row" id="variantbrick">
+                                               
+                                                   {% for brick in   data.VariantBricks.layoutDefinitions[currentBrand].children[0].children %}
+                                                        {% if brick.fieldtype =='input' %}
+                                                  {#Prakash#}
+                                                  {#{% if filterArray is not empty %}#}
+                                                  
+                                                  {#Kasthuri#}
+                                                  {% if filterArray is not empty and filterArray[0] is defined and filterArray[0].data is defined and brick.name in filterArray[0].data %}
+                                                        {% set brickvalue = filterArray[0].data[brick.name] %}{% else %} {% set brickvalue = "" %} {% endif %}
+                                                        
+                                                  
+                                                            <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable> <input type="text" name="{{ fields.name~'[data]['~brick.name~']' }}" id="{{brick.name}}" placeholder="{{brick.name}}" class="form-control"  value="{{brickvalue}}"  /></div></div>
+                                                        {% elseif brick.fieldtype =='numeric'%}
+                                                              <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable> <input type="number" step="any"  onwheel="return false;"   name="{{ fields.name~'[data]['~brick.name~']' }}" id="{{brick.name}}" placeholder="{{brick.name}}" class="form-control"  value="{{brickvalue}}"  /></div></div>
+                                                        {% elseif brick.fieldtype =='select'%}
+                                                              <div class="col-6"><div class="form-group"> <lable for="{{brick.name}}">{{brick.title}}</lable>
+                                                                <select name="{{ fields.name~'[data]['~brick.name~']' }}" id="id="{{brick.name}}"" class="form-control" ><option value="">Select</option>';
+                        
+                                    
+                                                                        {% for optionsbrick in brick.options %}
+                                                                            {% if optionsbrick.value!="" %}
+                                                                                <option value="{{optionsbrick.key}}" {% if optionsbrick.key == brickvalue %} selected ="selected"{% endif %} >{{optionsbrick.value}}</option>
+                                                                            {% endif %}
+                                                                    {% endfor %}
+                                                                   
+                                                                   
+                                                                </select>
+                                                              </div></div>
+                                                       
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {%  elseif fields.fieldtype == 'table' %} 
+                                  <div class="col-6">
+                                    <div class="form-group">
+                                  <lable for="{{fields.name}}">{{fields.title}}</lable>
+                                    {{dump(data.data[fields.name])}}
+                                    {% for key,tableData in data.data[fields.name] %}
+                                        <div class="row">
+                                            <div class="col-5">
+                                                <input type="text" class="form-control"  name="{{fields.name}}[{{key}}][0]" value="{{tableData[0]}}" />
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="text" class="form-control"  name="{{fields.name}}[{{key}}][1]" value="{{tableData[1]}}" />
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                    </div>
+                                {% endif %}
+                               
+                              {% endfor %}
+                          </div>
+                          <div class="tab-nav">
+                            {% if not loop.first %} 
+                                <a class="btn btn-primary back">Previous</a>
+                            {% endif %}
+                            {% if not loop.last %}
+                            <a class="btn btn-primary continue">Next</a>
+                            {% endif %}
+                          </div>
+                      </div>
+                   
+                    {% endfor %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        
+                        <input type="submit" id="Submit" name="Submit" value="{% if foo.2 =='add_product' %}Create{% else %}Update{% endif %}" class="btn btn-primary">
+                        
+                          <button type="button"  class="btn btn-primary" onclick="window.location.href='{% if foo.2 =='add_product' %}{{ pimcore_document(196) }}{% else %} {{absolute_url(path('pimcore_portalengine_data_object_detail', {documentPath:'All-Products',id:data.general.o_id}))}} {% endif %}'"> Cancel </button>
+                          
+                         
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+function validateQuantity(elm){
+    var id = $(elm).attr('id');
+    var myid = id.replace('__value','');
+    $('#'+myid).valid();
+}
+$(function() { 
+
+
+    $.validator.addMethod("quantityValue", function(value, element) {
+        var id = $(element).attr('id');
+       
+             qId = $('#'+id+'__value');
+            var qvalue = $('#'+id+'__value').val();
+        if(value =="" && qvalue ==""){
+            return true;
+        }else if(value !="" && qvalue ==""){
+            
+            return false;
+        }else{
+            
+            return true;
+        }
+    }, "Please Select the Unit");
+    
+});
+$(".wysiwyg").attr('contenteditable', true);
+
+    // var introduction = document.getElementsByClassName( 'wysiwyg' );
+	//	document.getElementsByClassName( 'wysiwyg' ).setAttribute( 'contenteditable', true );
+$(".wysiwyg").each(function(){
+    CKEDITOR.inline( this , {
+        toolbar : 'MyToolbar',
+        width : '100%',
+		// Allow some non-standard markup that we used in the introduction.
+		extraAllowedContent: 'a(documentation);abbr[title];code',
+		removePlugins: 'stylescombo',
+		// extraPlugins: 'sourcedialog',
+		removeButtons: 'PasteFromWord',
+		}  );
+	
+});
+var loadFile = function(event) {
+    var output = document.getElementById('imagediv');
+    output.src = URL.createObjectURL(event.target.files[0]);
+    output.onload = function() {
+      URL.revokeObjectURL(output.src) // free memory
+    }
+    output.style = 'display:block';
+  };
+var imageGalleryPick = function(event){
+     var output = document.getElementById('imagegallerydiv');
+     output.innerHTML = "";
+     output.style = 'display:block';
+      const imageFiles = event.target.files;
+
+    if (imageFiles.length > 0) {
+        // Loop through all the selected images
+        for (const imageFile of imageFiles) {
+            const reader = new FileReader();
+
+            // Convert each image file to a string
+            reader.readAsDataURL(imageFile);
+
+            // FileReader will emit the load event when the data URL is ready
+            // Access the string using reader.result inside the callback function
+            reader.addEventListener('load', () => {
+                // Create new <img> element and add it to the DOM
+                var img = `<img class='imagediv' src='${reader.result}'>`;
+                output.insertAdjacentHTML('afterend', img);
+            });
+        }
+    }
+}
+
+ $('.continue').click(function(){
+       var form = $("#ProductForm");
+       form.validate();
+       if (form.valid()) {
+            $('.nav-tabs > .active').next('li').find('a').trigger('click');
+       }
+});
+
+  $('.back').click(function(){
+      var form = $("#ProductForm");
+       form.validate();
+       if (form.valid()) {
+            $('.nav-tabs > .active').prev('li').find('a').trigger('click');
+       }
+});
+$(function() {
+   
+
+$("#Submit").click(function(event) {
+    event.preventDefault(); 
+  
+        var form = $("#ProductForm");
+        form.validate({
+            ignore: [],
+   
+        });
+        if (form.valid()) {
+           // alert("Form is valid. Submitting...");
+             form.submit();
+           /* var data = new FormData(form[0]);
+          
+           $.ajax({
+                url: form.attr('action'),
+                data: data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST', // For jQuery < 1.9
+                success: function(data){
+                    alert(data);
+                },
+                error: function(data){
+                    alert(data);
+                }
+            }); */ 
+        } else {
+            // alert("Form is not valid. Please check your inputs.");
+            var firstTabWithError = $('.tab-pane').has(':input.error').first();
+            $('#ProductForm .nav-tabs a[href="#' + firstTabWithError.attr('id') + '"]').tab('show');
+        }
+    
+});
+
+
+
+
+/*
+    $('#ProductForm').validate({
+        ignore: [],
+        errorPlacement: function() {},
+        submitHandler: function() {
+            alert('Successfully saved!');
+        },
+        invalidHandler: function() {
+            setTimeout(function() {
+                $('.nav-tabs a small.required').remove();
+                var validatePane = $('.tab-content.tab-validate .tab-pane:has(input.error)').each(function() {
+                    var id = $(this).attr('id');
+                    $('.nav-tabs').find('a[href^="#' + id + '"]').append(' <small class="required">***</small>');
+                });
+            });            
+        },
+    });
+    */
+    
+});
+</script>
+{% endblock %}
